@@ -1,0 +1,531 @@
+---
+title: "Resolución Actividad 3 máster Bioinformática UNIR (2025)"
+author: "Luis Cruz Dévora, Luis Ignacio Figueroa Gomez y Maria Alejandra Ardila Jimenez"
+date: "2026-06-14"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(gtsummary)
+library(factoextra)
+library(pheatmap)
+library(nortest)
+library(broom)
+library(gt)
+library(scales)
+```
+# Introducción
+
+En esta actividad se realiza un análisis bioestadístico aplicado a una base de datos de expresión génica de pacientes de la población Los Simpson. El objetivo es explorar los datos, comprobar la presencia de valores faltantes en las variables génicas, evaluar la normalidad, realizar un análisis de componentes principales y aplicar métodos descriptivos e inferenciales.
+
+En este primer apartado se carga la base de datos, se explora su estructura general y se verifica si existen valores faltantes en las variables génicas comprendidas entre ADCY3 y UHMK1.
+
+```{r cargar-datos}
+simpson <- read.csv("Base de datos Los Simpson completa.csv",
+                    header = TRUE,
+                    sep = ",",
+                    stringsAsFactors = FALSE)
+
+dim(simpson)
+head(simpson)
+```
+# Carga y limpieza de datos
+
+Primero se revisó la estructura general del dataset para conocer el número de pacientes, el número de variables y los nombres de las columnas disponibles.
+
+```{r exploracion-inicial}
+nrow(simpson)
+ncol(simpson)
+names(simpson)
+str(simpson)
+```
+Las variables génicas comienzan en la columna ADCY3 y terminan en la columna UHMK1. Para evitar depender de posiciones fijas, primero se identificaron sus posiciones usando los nombres de las columnas.
+
+```{r identificar-genes}
+inicio <- which(names(simpson) == "ADCY3")
+fin <- which(names(simpson) == "UHMK1")
+
+inicio
+fin
+
+genes <- simpson[, inicio:fin]
+
+dim(genes)
+head(genes)
+```
+Después de seleccionar las variables génicas, se evaluó la presencia de valores faltantes. Esto es importante porque los análisis posteriores, como el PCA, requieren trabajar con datos completos.
+
+```{r valores-faltantes}
+na_genes <- colSums(is.na(genes))
+
+na_genes
+
+sum(na_genes)
+```
+En caso de existir valores faltantes en las variables génicas, se eliminaron las filas incompletas. Para ello se utilizó `complete.cases()`, que identifica qué pacientes tienen información completa en todos los genes seleccionados.
+
+```{r limpieza-datos}
+simpson_limpio <- simpson[complete.cases(genes), ]
+
+nrow(simpson)
+nrow(simpson_limpio)
+```
+
+## Interpretación 
+
+La base de datos fue cargada correctamente y se comprobó que contiene 59 pacientes y 97 variables. Posteriormente, se identificaron las variables de expresión génica, que comienzan en ADCY3 y terminan en UHMK1. En lugar de seleccionar estas columnas únicamente por posición, se localizaron mediante sus nombres para hacer el código más seguro y reproducible.
+
+Una vez seleccionadas las variables génicas, se revisó la presencia de valores faltantes mediante `is.na()` y `colSums()`. Esta revisión es importante porque los análisis posteriores, como el análisis de componentes principales, requieren una matriz de datos completa. Finalmente, se creó un nuevo objeto llamado `simpson_limpio`, que conserva únicamente las filas completas en las variables génicas. De esta forma, el análisis posterior se realizará sobre una base depurada y adecuada para aplicar PCA y otros métodos estadísticos.
+
+# Evaluación de normalidad mediante Shapiro-Wilk
+
+Con el objetivo de evaluar si las variables de expresión génica siguen una distribución normal, se aplicó el test de normalidad de Shapiro-Wilk a cada uno de los genes comprendidos entre ADCY3 y UHMK1.
+
+La hipótesis nula (H0) del test establece que los datos siguen una distribución normal, mientras que la hipótesis alternativa (H1) indica que los datos no siguen una distribución normal.
+
+Para cada gen se obtuvo el correspondiente valor p, que posteriormente se utilizó para evaluar la compatibilidad con la normalidad.
+
+```{r shapiro-wilk}
+pvalores_shapiro <- sapply(genes, function(x) {
+  shapiro.test(x)$p.value
+})
+
+tabla_shapiro <- data.frame(
+  Gen = names(pvalores_shapiro),
+  Pvalor = pvalores_shapiro
+)
+
+tabla_shapiro
+```
+## Interpretación del test de normalidad
+
+Se aplicó el test de Shapiro-Wilk a las 37 variables de expresión génica comprendidas entre ADCY3 y UHMK1.
+
+Los resultados mostraron que todos los genes presentaron valores p inferiores a 0.05. En consecuencia, se rechazó la hipótesis nula de normalidad para todas las variables analizadas.
+
+Por tanto, ninguna de las variables génicas presentó una distribución compatible con la normalidad según el criterio α = 0.05. Este resultado indica que los datos presentan distribuciones alejadas de la normal y debe tenerse en cuenta en análisis estadísticos posteriores.
+
+No obstante, el Análisis de Componentes Principales (PCA) puede aplicarse igualmente, ya que esta técnica no exige estrictamente que todas las variables sigan una distribución normal.
+
+# Análisis de Componentes Principales
+
+```{r pca-basico}
+genes_escalados <- scale(genes)
+
+pca <- prcomp(genes_escalados)
+
+summary(pca)
+
+scores <- pca$x[, 1:6]
+
+simpson_limpio <- cbind(simpson_limpio, scores)
+
+tail(names(simpson_limpio))
+```
+## Visualización de la varianza explicada
+
+```{r scree-plot}
+fviz_eig(pca, addlabels = TRUE)
+```
+
+## Scree plot e interpretación de la varianza explicada
+
+El scree plot muestra la proporción de variabilidad explicada por cada componente principal.
+
+La primera componente principal (PC1) explicó aproximadamente el 12.5% de la variabilidad total, mientras que la segunda componente principal (PC2) explicó el 8.6%. A partir de la tercera componente se observa una disminución progresiva de la varianza explicada.
+
+No se aprecia un punto de corte abrupto, lo que indica que la variabilidad de los datos se encuentra distribuida entre múltiples componentes. Este comportamiento es habitual en estudios de expresión génica donde numerosas variables contribuyen simultáneamente a la estructura de los datos.
+
+## Gráfico de individuos del PCA
+
+```{r}
+fviz_pca_ind(
+  pca,
+  geom = "point",
+  repel = TRUE
+)
+```
+
+## Interpretacion del gráfico de individuos del PCA
+
+El gráfico de individuos permite visualizar la distribución de los pacientes en el espacio definido por las dos primeras componentes principales. En este caso, se observa que la mayoría de los individuos se agrupan en una zona central, mientras que algunos pacientes, especialmente los individuos 1 y 2, aparecen más separados del grupo principal.
+
+Esta separación sugiere que dichos individuos podrían presentar un perfil de expresión génica diferente al resto de la muestra. Sin embargo, esta observación debe interpretarse con cautela, ya que el gráfico solo representa las dos primeras componentes principales y estas explican una parte limitada de la variabilidad total.
+
+## Gráfico de variables coloreado por cos2
+
+```{r}
+fviz_pca_var(
+  pca,
+  col.var = "cos2",
+  gradient.cols = c("lightblue", "orange", "red"),
+  repel = TRUE
+)
+```
+
+## Interpretacion del gráfico de variables coloreado según cos2
+
+El gráfico de variables muestra la representación de los genes en el espacio de las dos primeras componentes principales. El color indica la calidad de representación de cada gen mediante el valor de cos2. Los genes con colores más intensos están mejor representados por las componentes principales PC1 y PC2.
+
+Se observa que algunos genes, como LEPR, SH2B1, ADCY3, PCSK1 y NTRK2, presentan una mayor contribución visual en el plano factorial, por lo que podrían estar relacionados con la variabilidad principal observada en la expresión génica de los pacientes.
+
+## Contribución de genes a PC1
+
+```{r}
+fviz_contrib(
+  pca,
+  choice = "var",
+  axes = 1,
+  top = 10
+)
+```
+
+## Interpretacion de la contribución de las variables a la PC1
+
+La contribución de las variables a la primera componente principal permite identificar los genes que más influyen en la construcción de esta componente. Los genes con mayor porcentaje de contribución son los que explican en mayor medida la variabilidad capturada por PC1.
+
+Este análisis es útil para priorizar genes relevantes dentro del PCA, especialmente porque en estudios de expresión génica no todos los genes aportan de la misma manera a la estructura global de los datos.
+
+## Contribución de genes a PC2
+
+```{r}
+fviz_contrib(
+  pca,
+  choice = "var",
+  axes = 1,
+  top = 10
+)
+```
+
+## Interpretacion dela contribución de las variables a la PC2
+
+La segunda componente principal representa una fuente adicional de variabilidad independiente de la PC1. Al analizar las contribuciones de los genes a PC2, se pueden identificar variables génicas que ayudan a diferenciar a los pacientes en otra dirección del espacio multivariado.
+
+Los genes con mayor contribución en PC2 pueden estar asociados a patrones de expresión distintos a los observados en PC1, lo que refuerza la utilidad del PCA para resumir información compleja en pocas dimensiones.
+
+
+## Clasificación de pacientes según IMC
+
+```{r}
+simpson_limpio$categoria_imc <- cut(
+  simpson_limpio$imc_kg_m2,
+  breaks = c(-Inf, 24.9, 29.9, Inf),
+  labels = c("Normal", "Sobrepeso", "Obesidad")
+)
+
+table(simpson_limpio$categoria_imc)
+```
+
+Se creó una variable categórica de IMC para clasificar a los pacientes en Normal, Sobrepeso u Obesidad.
+
+
+## Interpretacion de la clasificación de los pacientes según IMC
+
+A partir de la variable imc_kg_m2 se creó una nueva variable categórica de IMC. Los pacientes fueron clasificados como Normal, Sobrepeso u Obesidad según los puntos de corte habituales del índice de masa corporal.
+
+Esta variable será utilizada para visualizar si existe una separación de los pacientes en el PCA según su estado ponderal.
+
+## Corrección del PCA usando la base limpia
+
+```{r}
+genes_limpios <- simpson_limpio[, inicio:fin]
+
+genes_escalados <- scale(genes_limpios)
+
+pca <- prcomp(genes_escalados)
+
+scores <- as.data.frame(pca$x[, 1:6])
+
+simpson_limpio <- cbind(
+  simpson_limpio[, !(names(simpson_limpio) %in% names(scores))],
+  scores
+)
+```
+
+El PCA se recalculó utilizando únicamente los pacientes completos para las variables génicas. Esto asegura que el número de individuos del objeto PCA coincida con el número de filas del dataframe limpio.
+
+## PCA coloreado por categoría de IMC
+
+```{r}
+fviz_pca_ind(
+  pca,
+  geom = "point",
+  habillage = simpson_limpio$categoria_imc,
+  addEllipses = TRUE,
+  repel = TRUE
+)
+```
+
+El gráfico permite explorar si los pacientes se agrupan según su categoría de IMC en el espacio definido por las dos primeras componentes principales.
+
+## Clustering de variables génicas
+
+```{r}
+coord_var <- get_pca_var(pca)$coord
+
+set.seed(123)
+
+cluster_var <- kmeans(coord_var[, 1:2], centers = 3)
+
+fviz_pca_var(
+  pca,
+  col.var = as.factor(cluster_var$cluster),
+  palette = "jco",
+  repel = TRUE
+)
+```
+
+Se realizó un agrupamiento de las variables génicas utilizando sus coordenadas en las dos primeras componentes principales. Para ello se aplicó k-means con tres clusters.
+
+Este análisis permite identificar grupos de genes con patrones similares dentro del espacio del PCA.
+
+## Clustering de individuos basado en los scores del PCA
+
+```{r}
+scores_pca <- as.data.frame(pca$x[, 1:6])
+
+set.seed(123)
+
+cluster_ind <- kmeans(scores_pca, centers = 3)
+
+simpson_limpio$cluster_pca <- as.factor(cluster_ind$cluster)
+
+fviz_pca_ind(
+  pca,
+  geom = "point",
+  habillage = simpson_limpio$cluster_pca,
+  addEllipses = TRUE,
+  repel = TRUE
+)
+```
+
+Se realizó un agrupamiento de los pacientes utilizando los scores de las primeras seis componentes principales. Para ello se aplicó k-means con tres clusters, con el objetivo de identificar posibles subgrupos de pacientes según sus perfiles globales de expresión génica.
+
+La visualización muestra la distribución de los clusters en el espacio definido por PC1 y PC2. Si los grupos aparecen separados, esto sugiere perfiles de expresión génica diferenciados entre pacientes. Si existe solapamiento, indica que la separación entre subgrupos no es completa en las dos primeras componentes.
+
+## Heatmap de correlaciones de Spearman entre genes y componentes principales
+
+```{r}
+library(pheatmap)
+
+cor_genes_pc <- cor(
+  genes_limpios,
+  simpson_limpio[, c("PC1", "PC2", "PC3", "PC4", "PC5", "PC6")],
+  method = "spearman"
+)
+
+pheatmap(
+  cor_genes_pc,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  display_numbers = TRUE,
+  fontsize_number = 6,
+  main = "Correlaciones de Spearman entre genes y componentes principales"
+)
+```
+
+Se construyó un heatmap con las correlaciones de Spearman entre las variables génicas y las primeras seis componentes principales. Se utilizó la correlación de Spearman debido a que los genes no siguieron una distribución normal según el test de Shapiro-Wilk.
+
+Este análisis permite identificar qué genes se relacionan con cada componente principal. Las correlaciones positivas indican que mayores valores de expresión génica se asocian con mayores scores de la componente, mientras que las correlaciones negativas indican una relación inversa.
+
+## Creación de terciles para las componentes principales
+
+```{r}
+simpson_limpio$PC1_t <- cut(
+  simpson_limpio$PC1,
+  breaks = quantile(simpson_limpio$PC1,
+                    probs = c(0, 1/3, 2/3, 1),
+                    na.rm = TRUE),
+  include.lowest = TRUE,
+  labels = c("T1", "T2", "T3")
+)
+
+simpson_limpio$PC2_t <- cut(
+  simpson_limpio$PC2,
+  breaks = quantile(simpson_limpio$PC2,
+                    probs = c(0, 1/3, 2/3, 1),
+                    na.rm = TRUE),
+  include.lowest = TRUE,
+  labels = c("T1", "T2", "T3")
+)
+
+simpson_limpio$PC3_t <- cut(
+  simpson_limpio$PC3,
+  breaks = quantile(simpson_limpio$PC3,
+                    probs = c(0, 1/3, 2/3, 1),
+                    na.rm = TRUE),
+  include.lowest = TRUE,
+  labels = c("T1", "T2", "T3")
+)
+
+table(simpson_limpio$PC1_t)
+table(simpson_limpio$PC2_t)
+table(simpson_limpio$PC3_t)
+```
+
+Las tres primeras componentes principales se dividieron en terciles utilizando los percentiles 33.3% y 66.7%. De esta manera, cada paciente fue clasificado en un grupo de valores bajos (T1), intermedios (T2) o altos (T3) para cada componente principal.
+
+## Tabla descriptiva según terciles de PC1
+
+```{r}
+library(gtsummary)
+
+tabla_PC1 <- simpson_limpio |>
+  dplyr::select(PC1_t, all_of(colnames(genes_limpios))) |>
+  tbl_summary(
+    by = PC1_t,
+    type = everything() ~ "continuous",
+    statistic = everything() ~ "{median} ({p25}-{p75})",
+    digits = everything() ~ 1
+  ) |>
+  add_p(
+    test = everything() ~ "kruskal.test",
+    pvalue_fun = ~style_pvalue(.x, digits = 3)
+  )
+
+tabla_PC1
+```
+
+La tabla muestra la distribución de los genes según los terciles de la primera componente principal. Debido a que todas las variables génicas rechazaron normalidad, se emplearon la mediana y el rango intercuartílico como medidas descriptivas, junto con la prueba de Kruskal-Wallis para la comparación entre grupos.
+
+## Tabla descriptiva según terciles de PC2
+
+```{r}
+tabla_PC2 <- simpson_limpio |>
+  dplyr::select(PC2_t, all_of(colnames(genes_limpios))) |>
+  tbl_summary(
+    by = PC2_t,
+    type = everything() ~ "continuous",
+    statistic = everything() ~ "{median} ({p25}-{p75})",
+    digits = everything() ~ 1
+  ) |>
+  add_p(
+    test = everything() ~ "kruskal.test",
+    pvalue_fun = ~style_pvalue(.x, digits = 3)
+  )
+
+tabla_PC2
+```
+
+La comparación por terciles de la segunda componente principal permite identificar genes cuya expresión podría estar asociada a la variabilidad resumida por PC2.
+
+## Tabla descriptiva según terciles de PC3
+
+```{r}
+tabla_PC3 <- simpson_limpio |>
+  dplyr::select(PC3_t, all_of(colnames(genes_limpios))) |>
+  tbl_summary(
+    by = PC3_t,
+    type = everything() ~ "continuous",
+    statistic = everything() ~ "{median} ({p25}-{p75})",
+    digits = everything() ~ 1
+  ) |>
+  add_p(
+    test = everything() ~ "kruskal.test",
+    pvalue_fun = ~style_pvalue(.x, digits = 3)
+  )
+
+tabla_PC3
+```
+
+La tabla descriptiva según los terciles de la tercera componente principal resume las diferencias observadas en la expresión génica entre los tres grupos de pacientes definidos por PC3.
+
+## Creación de la variable sobrepeso
+
+```{r}
+simpson_limpio$sobrepeso <- ifelse(
+  simpson_limpio$imc_kg_m2 >= 25,
+  1,
+  0
+)
+
+table(simpson_limpio$sobrepeso)
+```
+
+Se creó una variable binaria de sobrepeso a partir del índice de masa corporal. Los individuos con IMC igual o superior a 25 kg/m² fueron clasificados como sobrepeso (1), mientras que los restantes fueron clasificados como no sobrepeso (0).
+
+## Modelo de regresión logística sin ajuste
+
+```{r}
+modelo1 <- glm(
+  sobrepeso ~ PC1_t + PC2_t + PC3_t,
+  data = simpson_limpio,
+  family = binomial()
+)
+
+summary(modelo1)
+```
+
+Se ajustó un modelo de regresión logística utilizando como variables predictoras los terciles de las tres primeras componentes principales.
+
+## Modelo ajustado por edad
+
+```{r}
+modelo2 <- glm(
+  sobrepeso ~ PC1_t + PC2_t + PC3_t + edad_anios,
+  data = simpson_limpio,
+  family = binomial()
+)
+
+summary(modelo2)
+```
+
+Se añadió la edad como posible variable de confusión para evaluar si las asociaciones observadas entre los componentes principales y el sobrepeso permanecen tras el ajuste.
+
+## Modelo ajustado por edad y sexo
+
+```{r}
+modelo3 <- glm(
+  sobrepeso ~ PC1_t + PC2_t + PC3_t + edad_anios + sexo,
+  data = simpson_limpio,
+  family = binomial()
+)
+
+summary(modelo3)
+```
+
+Finalmente se ajustó un modelo multivariable incorporando edad y sexo como posibles factores de confusión.
+
+## Tabla final de regresión logística
+
+```{r}
+library(broom)
+library(dplyr)
+
+tabla_regresion <- tidy(
+  modelo3,
+  exponentiate = TRUE,
+  conf.int = TRUE
+) %>%
+  mutate(
+    OR = round(estimate, 2),
+    IC95 = paste0(round(conf.low, 2), " - ", round(conf.high, 2)),
+    p_valor = round(p.value, 3)
+  ) %>%
+  select(term, OR, IC95, p_valor)
+
+tabla_regresion
+```
+
+La tabla final resume el modelo de regresión logística ajustado por edad y sexo. Se presentan los odds ratios (OR), sus intervalos de confianza al 95% y los valores p. Los terciles de PC1, PC2 y PC3 no mostraron asociaciones estadísticamente significativas con el sobrepeso. En cambio, la edad presentó una asociación positiva y significativa, indicando que a mayor edad aumenta la probabilidad de presentar sobrepeso en esta muestra.
+
+# Conclusiones generales
+
+En este estudio se analizó la expresión de 37 genes en una muestra de 59 individuos mediante técnicas de reducción de dimensionalidad, análisis descriptivos y modelos predictivos.
+
+Los resultados del test de Shapiro-Wilk mostraron que ninguno de los genes presentó distribución normal, por lo que se utilizaron métodos no paramétricos para los análisis posteriores. El análisis de componentes principales permitió resumir la información contenida en los genes en un número reducido de componentes. Las seis primeras componentes explicaron aproximadamente el 43.9% de la variabilidad total observada.
+
+Las visualizaciones del PCA mostraron una estructura compleja de los datos, sin una separación completamente definida entre los individuos según el índice de masa corporal. Asimismo, el clustering permitió identificar grupos de individuos y genes con patrones similares de comportamiento.
+
+Las tablas descriptivas por terciles de las componentes principales facilitaron la comparación de la expresión génica entre grupos de pacientes con distintos perfiles multivariados.
+
+Finalmente, los modelos de regresión logística indicaron que los terciles de las tres primeras componentes principales no se asociaron significativamente con el sobrepeso. Sin embargo, la edad mostró una asociación positiva y significativa con esta condición, sugiriendo que el riesgo de sobrepeso aumenta conforme aumenta la edad de los participantes.
+
+En conjunto, estos resultados muestran la utilidad del PCA para resumir grandes conjuntos de variables génicas y explorar patrones de asociación en estudios de bioestadística aplicada.
+
+
