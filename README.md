@@ -1,138 +1,89 @@
-\# Análisis de Expresión Génica Relacionada con Obesidad mediante PCA
-
-
+# Análisis de Expresión Génica Relacionada con Obesidad mediante PCA
 
 Análisis de Componentes Principales (PCA), clustering, visualización mediante heatmaps, estadística descriptiva y regresión logística de datos de expresión génica asociados con obesidad utilizando R.
 
+## Descripción del proyecto
 
-
-\## Descripción del proyecto
-
-
-
-Proyecto desarrollado para la asignatura \*\*Estadística y R para Ciencias de la Salud\*\* del \*\*Máster en Bioinformática\*\*.
-
-
+Proyecto desarrollado para la asignatura **Estadística y R para Ciencias de la Salud** del **Máster en Bioinformática**.
 
 El objetivo del estudio fue explorar patrones de expresión de 37 genes relacionados con obesidad en una cohorte de 59 individuos, empleando técnicas de reducción de dimensionalidad, análisis descriptivos y modelos predictivos.
 
+## Objetivos
 
+- Evaluar la normalidad de las variables génicas mediante el test de Shapiro-Wilk.
+- Realizar un Análisis de Componentes Principales (PCA).
+- Explorar patrones de agrupamiento entre individuos y genes.
+- Construir heatmaps de correlaciones entre genes y componentes principales.
+- Comparar la expresión génica mediante tablas descriptivas estratificadas por terciles.
+- Evaluar asociaciones con sobrepeso mediante regresión logística ajustada.
 
-\## Objetivos
+## Herramientas utilizadas
 
+- R
+- RMarkdown
+- stats
+- factoextra
+- pheatmap
+- gtsummary
+- broom
+- dplyr
 
+## Principales resultados
 
-\- Evaluar la normalidad de las variables génicas mediante el test de Shapiro-Wilk.
+- Los 37 genes analizados rechazaron la hipótesis de normalidad.
+- Las seis primeras componentes principales explicaron aproximadamente el 43.9 % de la variabilidad total.
+- Se identificaron patrones de correlación entre genes relacionados con la regulación energética y las componentes principales.
+- No se encontraron asociaciones estadísticamente significativas entre los terciles de las componentes principales y el sobrepeso.
+- La edad fue el único predictor significativo en el modelo de regresión logística ajustado.
 
-\- Realizar un Análisis de Componentes Principales (PCA).
+## Figuras principales
 
-\- Explorar patrones de agrupamiento entre individuos y genes.
+### Figura 1. Scree plot del PCA
 
-\- Construir heatmaps de correlaciones entre genes y componentes principales.
+Las seis primeras componentes principales explicaron aproximadamente el 43.9 % de la variabilidad total.
 
-\- Comparar la expresión génica mediante tablas descriptivas estratificadas por terciles.
+![Scree Plot](figures/Figura1_ScreePlot.png)
 
-\- Evaluar asociaciones con sobrepeso mediante regresión logística ajustada.
+### Figura 2. Distribución de individuos en el PCA
 
+La mayoría de los individuos se agrupó alrededor del origen, aunque algunos pacientes mostraron separación respecto al grupo principal.
 
+![PCA de individuos](figures/Figura2_PCA_Individuos.png)
 
-\## Herramientas utilizadas
+### Figura 3. Heatmap de correlaciones
 
+Heatmap de correlaciones de Spearman entre los genes analizados y las seis primeras componentes principales.
 
+![Heatmap de correlaciones](figures/Figura3_Heatmap.png)
 
-\- R
-
-\- RMarkdown
-
-\- stats
-
-\- factoextra
-
-\- pheatmap
-
-\- gtsummary
-
-\- broom
-
-\- dplyr
-
-
-
-\## Principales resultados
-
-
-
-\- Los 37 genes analizados rechazaron la hipótesis de normalidad.
-
-\- Las seis primeras componentes principales explicaron aproximadamente el 43.9 % de la variabilidad total.
-
-\- Se identificaron patrones de correlación entre genes relacionados con la regulación energética y las componentes principales.
-
-\- No se encontraron asociaciones estadísticamente significativas entre los terciles de las componentes principales y el sobrepeso.
-
-\- La edad fue el único predictor significativo en el modelo de regresión logística ajustado.
-
-
-
-\## Estructura del repositorio
-
-
+## Estructura del repositorio
 
 ```text
-
 bioinformatics-gene-expression-pca/
 
-
-
 README.md
-
-Act3\_grp\_RStudio.Rmd
-
-Act3\_grp\_RStudio.html
-
-
+Act3_grp_RStudio.Rmd
+Act3_grp_RStudio.html
 
 figures/
+├── Figura1_ScreePlot.png
+├── Figura2_PCA_Individuos.png
+└── Figura3_Heatmap.png
 
-├── Figura1\_ScreePlot.png
-
-├── Figura2\_PCA\_Individuos.png
-
-└── Figura3\_Heatmap.png
-
-
-
-poster/
-
-└── Poster\_Actividad3.pptx
-
+Poster/
+├── Poster_Actividad3.pptx
+└── Poster_Actividad3.pdf
 ```
 
+## Autores
 
+- Luis Angelo Cruz
+- Luis Ignacio Figueroa Gomez
+- Maria Alejandra Ardila Jimenez
 
-\## Autores
-
-
-
-\- Luis Angelo Cruz
-
-\- Luis Ignacio Figueroa Gomez
-
-\- Maria Alejandra Ardila Jimenez
-
-
-
-Máster en Bioinformática
-
-
-
+Máster en Bioinformática  
 Universidad Internacional de La Rioja (UNIR)
 
-
-
-\## Licencia
-
-
+## Licencia
 
 Este repositorio tiene fines exclusivamente académicos y educativos.
-
