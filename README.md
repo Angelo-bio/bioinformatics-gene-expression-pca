@@ -56,11 +56,17 @@ Heatmap de correlaciones de Spearman entre los genes analizados y las seis prime
 
 ![Heatmap de correlaciones](figures/Figura3_Heatmap.png)
 
+## DATA
+
+El dataset utilizado se encuentra en la carpeta `DATA/` del repositorio.
+
+Contiene variables clínicas, antropométricas y de expresión génica utilizadas para el análisis de PCA y modelos estadísticos.
+
 ## Estructura del repositorio
 
 ```text
 bioinformatics-gene-expression-pca/
-
+DATA
 README.md
 Act3_grp_RStudio.Rmd
 Act3_grp_RStudio.html
