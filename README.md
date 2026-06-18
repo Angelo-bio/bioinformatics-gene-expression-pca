@@ -56,9 +56,9 @@ Heatmap de correlaciones de Spearman entre los genes analizados y las seis prime
 
 ![Heatmap de correlaciones](figures/Figura3_Heatmap.png)
 
-## DATA
+## Base de datos Los Simpson completa.csv
 
-El dataset utilizado se encuentra en la carpeta `DATA/` del repositorio.
+El dataset utilizado se encuentra en la carpeta `Base de datos Los Simpson completa.csv/` del repositorio.
 
 Contiene variables clínicas, antropométricas y de expresión génica utilizadas para el análisis de PCA y modelos estadísticos.
 
@@ -66,10 +66,11 @@ Contiene variables clínicas, antropométricas y de expresión génica utilizada
 
 ```text
 bioinformatics-gene-expression-pca/
-DATA
+
 README.md
 Act3_grp_RStudio.Rmd
 Act3_grp_RStudio.html
+Base de datos Los Simpson completa.csv
 
 figures/
 ├── Figura1_ScreePlot.png
